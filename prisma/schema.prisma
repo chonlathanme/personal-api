@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String?   @unique
+  mobile       String?   @unique
+  password     String
+  role         Role      @default(USER)
+  enabled      Boolean   @default(true)
+  profileImage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  orders       Order[]
+  carts        Cart[]
+  address      Address[]
+}
+
+model Address {
+  id      Int    @id @default(autoincrement())
+  address String
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  sold        Int              @default(0)
+  quantity    Int
+  orderItems  ProductOnOrder[]
+  cartItems   ProductOnCart[]
+  images      Image[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  category    Category?        @relation(fields: [categoryId], references: [id])
+  categoryId  Int?
+}
+
+model ProductOnOrder {
+  id        Int     @id @default(autoincrement())
+  count     Int
+  price     Float
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   Int
+}
+
+model Order {
+  id          Int              @id @default(autoincrement())
+  cartTotal   Float
+  orderStatus OrderStatus      @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  products    ProductOnOrder[]
+  orderBy     User             @relation(fields: [userId], references: [id])
+  userId      Int
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Product   Product[]
+}
+
+model Cart {
+  id        Int             @id @default(autoincrement())
+  cartTotal Float
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  orderBy   User            @relation(fields: [userId], references: [id])
+  userId    Int
+  products  ProductOnCart[]
+}
+
+model ProductOnCart {
+  id        Int     @id @default(autoincrement())
+  count     Int
+  price     Float
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+}
+
+model Image {
+  id          Int        @id @default(autoincrement())
+  asset_id    String
+  public_id   String
+  url         String
+  secure_url  String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  product     Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   Int?
+  promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  promotionId Int?
+  news        News?      @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  newsId      Int?
+}
+
+model Promotion {
+  id        Int      @id @default(autoincrement())
+  details   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  images    Image[]
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  details   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  images    Image[]
+}
